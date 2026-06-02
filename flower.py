@@ -1,94 +1,93 @@
 import streamlit as st
-import pandas as pd
-from sklearn.datasets import load_iris
-from sklearn.linear_model import LogisticRegression
 
-# 1. INJECT CUSTOM CSS FOR STYLING
+# 1. PREMIUM STYLING (HTML/CSS)
 st.markdown("""
     <style>
-    /* Change background color of the main app */
     .stApp {
         background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
         color: #f8fafc;
     }
-    
-    /* Style the main headings */
     h1 {
         color: #f472b6 !important;
-        font-family: 'Helvetica Neue', sans-serif;
         font-weight: 800;
-        text-shadow: 0px 4px 12px rgba(244, 114, 182, 0.3);
+        text-align: center;
     }
-    
-    h3 {
-        color: #38bdf8 !important;
-        font-weight: 600;
-    }
-    
-    /* Style the selection radio buttons */
-    .stRadio [data-testid="stMarkdownContainer"] p {
-        font-size: 18px;
-        font-weight: bold;
-        color: #e2e8f0;
-    }
-    
-    /* Create a beautiful custom card design for inputs and results */
     div[data-testid="stBlock"] {
         background: rgba(255, 255, 255, 0.04);
-        padding: 25px;
+        padding: 30px;
         border-radius: 16px;
         border: 1px solid rgba(255, 255, 255, 0.08);
-        backdrop-filter: blur(8px);
-        margin-bottom: 20px;
+        max-width: 500px;
+        margin: 0 auto;
     }
-    
-    /* Custom design for the prediction success box */
-    .stAlert {
-        background-color: rgba(16, 185, 129, 0.15) !important;
-        border: 1px solid #10b981 !important;
-        border-radius: 12px !important;
-        box-shadow: 0 4px 20px rgba(16, 185, 129, 0.2);
+    .stButton>button {
+        width: 100%;
+        background: linear-gradient(90deg, #f472b6, #38bdf8);
+        color: white;
+        border: none;
+        padding: 10px;
+        font-weight: bold;
+        border-radius: 8px;
     }
     </style>
 """, unsafe_allow_html=True)
 
-# 2. APP LOGIC
-st.title("🌸 Iris Flower Species Predictor")
-st.write("An elegant, AI-powered web tool to classify Iris flower species instantly.")
+# 2. INITIALIZE SESSION STATE (To remember if you are logged in)
+if "logged_in" not in st.session_state:
+    st.session_state["logged_in"] = False
+if "user_role" not in st.session_state:
+    st.session_state["user_role"] = None
 
-# Input method toggle
-input_method = st.radio("Choose Input Method:", ("Use Sliders", "Take a Photo with Camera"))
+# 3. LOGIN INTERFACE
+if not st.session_state["logged_in"]:
+    st.title("🔐 Secure AI Portal Login")
+    st.write("Please enter your credentials to unlock the Iris Predictor application.")
+    
+    # Login Form Box
+    with st.container():
+        username = st.text_input("Username")
+        password = st.text_input("Password", type="password")
+        login_button = st.button("Log In")
+        
+        if login_button:
+            # Check for Admin
+            if username == "admin" and password == "admin123":
+                st.session_state["logged_in"] = True
+                st.session_state["user_role"] = "admin"
+                st.rerun()
+            # Check for Regular User
+            elif username == "user" and password == "user123":
+                st.session_state["logged_in"] = True
+                st.session_state["user_role"] = "user"
+                st.rerun()
+            else:
+                st.error("Invalid Username or Password. Please try again.")
 
-# Load dataset and train the model
-iris = load_iris()
-X = iris.data
-y = iris.target
-model = LogisticRegression(max_iter=200)
-model.fit(X, y)
+# 4. SUCCESS STATE (WHAT HAPPENS AFTER LOGIN)
+else:
+    st.sidebar.title("Navigation Menu")
+    
+    # Dynamic navigation based on role
+    if st.session_state["user_role"] == "admin":
+        page = st.sidebar.radio("Go to:", ["ℹ️ About Us", "🌸 AI Predictor", "🛠️ Admin Dashboard"])
+    else:
+        page = st.sidebar.radio("Go to:", ["ℹ️ About Us", "🌸 AI Predictor"])
+        
+    # Logout button at the bottom of the sidebar
+    if st.sidebar.button("Log Out"):
+        st.session_state["logged_in"] = False
+        st.session_state["user_role"] = None
+        st.rerun()
 
-if input_method == "Use Sliders":
-    st.subheader("🎚️ Adjust Flower Dimensions")
-    sepal_length = st.slider("Sepal Length (cm)", 4.3, 7.9, 5.8)
-    sepal_width = st.slider("Sepal Width (cm)", 2.0, 4.4, 3.0)
-    petal_length = st.slider("Petal Length (cm)", 1.0, 6.9, 4.3)
-    petal_width = st.slider("Petal Width (cm)", 0.1, 2.5, 1.3)
-    
-    input_data = pd.DataFrame([[sepal_length, sepal_width, petal_length, petal_width]], 
-                              columns=['sepal length', 'sepal width', 'petal length', 'petal width'])
-    
-    st.subheader("📊 Your Input Measurements")
-    st.write(input_data)
-    
-    prediction = model.predict(input_data)
-    predicted_species = iris.target_names[prediction[0]]
-    
-    st.subheader("🎯 AI Prediction Result")
-    st.success(f"The AI thinks this flower is a **{predicted_species.upper()}**!")
-
-elif input_method == "Take a Photo with Camera":
-    st.subheader("📸 Camera Capture")
-    picture = st.camera_input("Take a picture of an Iris flower")
-    
-    if picture:
-        st.image(picture, caption="Uploaded Image")
-        st.info("✨ Image received successfully! Deep learning computer vision pipeline coming soon.")
+    # Placeholders for our next steps
+    if page == "ℹ️ About Us":
+        st.title("ℹ️ About Us")
+        st.write("Login successful! This is where your stylish profile page will go.")
+        
+    elif page == "🌸 AI Predictor":
+        st.title("🌸 AI Predictor")
+        st.write("This is where your sliders and camera scanner will live.")
+        
+    elif page == "🛠️ Admin Dashboard":
+        st.title("🛠️ Private Admin Dashboard")
+        st.write("Welcome, Boss! This page is hidden from regular users and belongs only to you.")
