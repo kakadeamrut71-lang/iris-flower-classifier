@@ -1,4 +1,7 @@
 import streamlit as st
+import pandas as pd
+from sklearn.datasets import load_iris
+from sklearn.linear_model import LogisticRegression
 
 # 1. PREMIUM STYLING (HTML/CSS)
 st.markdown("""
@@ -12,6 +15,20 @@ st.markdown("""
         font-weight: 800;
         text-align: center;
     }
+    h2, h3 {
+        color: #38bdf8 !important;
+    }
+    /* Profile card container styling */
+    .profile-card {
+        background: rgba(255, 255, 255, 0.04);
+        padding: 30px;
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        margin-top: 20px;
+    }
+    /* Login Form styling */
     div[data-testid="stBlock"] {
         background: rgba(255, 255, 255, 0.04);
         padding: 30px;
@@ -32,7 +49,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 2. INITIALIZE SESSION STATE (To remember if you are logged in)
+# 2. INITIALIZE SESSION STATE
 if "logged_in" not in st.session_state:
     st.session_state["logged_in"] = False
 if "user_role" not in st.session_state:
@@ -43,19 +60,16 @@ if not st.session_state["logged_in"]:
     st.title("🔐 Secure AI Portal Login")
     st.write("Please enter your credentials to unlock the Iris Predictor application.")
     
-    # Login Form Box
     with st.container():
         username = st.text_input("Username")
         password = st.text_input("Password", type="password")
         login_button = st.button("Log In")
         
         if login_button:
-            # Check for Admin
             if username == "admin" and password == "admin123":
                 st.session_state["logged_in"] = True
                 st.session_state["user_role"] = "admin"
                 st.rerun()
-            # Check for Regular User
             elif username == "user" and password == "user123":
                 st.session_state["logged_in"] = True
                 st.session_state["user_role"] = "user"
@@ -63,31 +77,48 @@ if not st.session_state["logged_in"]:
             else:
                 st.error("Invalid Username or Password. Please try again.")
 
-# 4. SUCCESS STATE (WHAT HAPPENS AFTER LOGIN)
+# 4. SECURE INNER FRAMEWORK
 else:
     st.sidebar.title("Navigation Menu")
-    
-    # Dynamic navigation based on role
     if st.session_state["user_role"] == "admin":
         page = st.sidebar.radio("Go to:", ["ℹ️ About Us", "🌸 AI Predictor", "🛠️ Admin Dashboard"])
     else:
         page = st.sidebar.radio("Go to:", ["ℹ️ About Us", "🌸 AI Predictor"])
         
-    # Logout button at the bottom of the sidebar
     if st.sidebar.button("Log Out"):
         st.session_state["logged_in"] = False
         st.session_state["user_role"] = None
         st.rerun()
 
-    # Placeholders for our next steps
+    # --- BRAND NEW STYLISH ABOUT US PAGE ---
     if page == "ℹ️ About Us":
-        st.title("ℹ️ About Us")
-        st.write("Login successful! This is where your stylish profile page will go.")
+        st.title("ℹ️ About the Project")
         
+        # Display a high-quality botanical data banner image
+        st.image("https://images.unsplash.com/photo-1527489377706-5bf97e608852?auto=format&fit=crop&w=1200&q=80", 
+                 caption="Data Science & Machine Learning in Botany", use_container_width=True)
+        
+        # Profile Card Section
+        st.markdown("""
+        <div class="profile-card">
+            <h3>👨‍💻 Developer Profile</h3>
+            <p style="font-size:18px; line-height:1.6; color:#cbd5e1;">
+                Welcome to the <b>Iris Flower Species Predictor</b> web portal. This application was engineered 
+                to showcase the practical deployment of Machine Learning models via cloud infrastructures.
+            </p>
+            <hr style="border-color: rgba(255,255,255,0.1);">
+            <p><b>Lead Developer:</b> Amrut Kakade</p>
+            <p><b>Academic Track:</b> Master of Science (MSc) in Computer Science</p>
+            <p><b>Institution:</b> Shivaji University, Kolhapur</p>
+            <p><b>Core Stack:</b> Python, Scikit-Learn, Streamlit, Git, MySQL</p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+    # --- PLACEHOLDERS FOR NEXT STEPS ---
     elif page == "🌸 AI Predictor":
-        st.title("🌸 AI Predictor")
-        st.write("This is where your sliders and camera scanner will live.")
+        st.title("🌸 AI Predictor Dashboard")
+        st.info("Step 3 will insert the multi-page Sliders and Live Camera tools right here!")
         
     elif page == "🛠️ Admin Dashboard":
-        st.title("🛠️ Private Admin Dashboard")
-        st.write("Welcome, Boss! This page is hidden from regular users and belongs only to you.")
+        st.title("🛠️ Private Admin System panel")
+        st.warning("Step 4 will insert your restricted administrative tracking frames right here!")
