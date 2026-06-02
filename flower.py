@@ -61,9 +61,8 @@ if "user_role" not in st.session_state:
 if "prediction_history" not in st.session_state:
     st.session_state["prediction_history"] = [{"Type": "System Test", "Result": "SETOSA", "Inputs/Data": "5.1, 3.5, 1.4, 0.2"}]
 
-# NEW FEATURE: Custom Account Database Storage
+# Custom Account Database Storage Setup
 if "user_database" not in st.session_state:
-    # Pre-creating your admin account and one sample user account
     st.session_state["user_database"] = {
         "admin": {"password": "admin123", "role": "admin"},
         "user": {"password": "user123", "role": "user"}
@@ -81,18 +80,16 @@ model.fit(X, y)
 if not st.session_state["logged_in"]:
     st.title("🔐 Secure AI Portal")
     
-    # Switch between Login mode and Sign Up mode
     auth_mode = st.radio("Choose Action:", ["Sign In to Account", "Create New Account (Sign Up)"], horizontal=True)
     
     with st.container():
         if auth_mode == "Sign In to Account":
             st.subheader("🔑 Sign In")
-            username = st.text_input("Username")
+            username = st.text_input("Username").strip().lower()
             password = st.text_input("Password", type="password")
             login_button = st.button("Log In")
             
             if login_button:
-                # Check if username exists in our dynamic database dictionary
                 if username in st.session_state["user_database"]:
                     stored_password = st.session_state["user_database"][username]["password"]
                     stored_role = st.session_state["user_database"][username]["role"]
@@ -116,16 +113,16 @@ if not st.session_state["logged_in"]:
             if register_button:
                 if not new_username or not new_password:
                     st.warning("Username and Password fields cannot be empty.")
-                elif new_username in st.session_state["user_state" if "user_state" in st.session_state else "user_database"]:
+                elif new_username in st.session_state["user_database"]:
                     st.error("That username is already taken! Try another one.")
                 elif new_password != confirm_password:
                     st.error("Passwords do not match. Re-type carefully.")
                 else:
-                    # Save new credentials into our session memory database as a regular user
+                    # FIX applied here: Safely saving directly into user_database dictionary
                     st.session_state["user_database"][new_username] = {"password": new_password, "role": "user"}
                     st.success("🎉 Registration Complete! Select 'Sign In to Account' above to log in.")
 
-# 4. SECURE INNER FRAMEWORK (After successful authentication)
+# 4. SECURE INNER FRAMEWORK
 else:
     st.sidebar.title("Navigation Menu")
     if st.session_state["user_role"] == "admin":
@@ -159,7 +156,7 @@ else:
         </div>
         """, unsafe_allow_html=True)
         
-    # --- PAGE 2: CORE AI PREDICTOR (SLIDERS & CAMERA) ---
+    # --- PAGE 2: CORE AI PREDICTOR ---
     elif page == "🌸 AI Predictor":
         st.title("🌸 AI Predictor Dashboard")
         tab1, tab2 = st.tabs(["🎚️ Measurement Sliders", "📸 Live Camera Scanner"])
@@ -196,7 +193,7 @@ else:
                 st.image(picture, caption="Uploaded Image Stream")
                 st.info("✨ Image matrix captured successfully! CNN deep learning classification coming soon.")
 
-    # --- PAGE 3: ADMIN DASHBOARD PANEL (SHOWS REGISTERED USERS TOO!) ---
+    # --- PAGE 3: ADMIN DASHBOARD PANEL ---
     elif page == "🛠️ Admin Dashboard":
         st.title("🛠️ Private Admin System Panel")
         
@@ -204,9 +201,8 @@ else:
         with col1:
             st.metric(label="Total Session Logs", value=len(st.session_state["prediction_history"]))
         with col2:
-            st.metric(label="Registered Users Online", value=len(st.session_state["user_database"]))
+            st.metric(label="Registered Accounts Online", value=len(st.session_state["user_database"]))
             
-        # NEW ADMIN FEATURE: View Created Accounts
         st.markdown('<div class="admin-card">', unsafe_allow_html=True)
         st.subheader("👥 Registered Accounts Registry")
         users_df = pd.DataFrame.from_dict(st.session_state["user_database"], orient="index").reset_index()
@@ -214,7 +210,6 @@ else:
         st.dataframe(users_df, use_container_width=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
-        # Session logs historical data framework
         st.markdown('<div class="admin-card">', unsafe_allow_html=True)
         st.subheader("📋 Session Event Logging Tracking")
         if len(st.session_state["prediction_history"]) > 0:
