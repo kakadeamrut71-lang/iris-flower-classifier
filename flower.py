@@ -18,7 +18,7 @@ st.markdown("""
     h2, h3 {
         color: #38bdf8 !important;
     }
-    .profile-card, .predictor-card {
+    .profile-card, .predictor-card, .admin-card {
         background: rgba(255, 255, 255, 0.04);
         padding: 30px;
         border-radius: 20px;
@@ -59,7 +59,10 @@ if "logged_in" not in st.session_state:
 if "user_role" not in st.session_state:
     st.session_state["user_role"] = None
 if "prediction_history" not in st.session_state:
-    st.session_state["prediction_history"] = []
+    # Pre-populate history with a sample log so it is not empty
+    st.session_state["prediction_history"] = [
+        {"Type": "System Test", "Result": "SETOSA", "Inputs/Data": "5.1, 3.5, 1.4, 0.2"}
+    ]
 
 # Load Iris Dataset and Train standard model
 iris = load_iris()
@@ -156,7 +159,7 @@ else:
             
             # Save logs to history tracking state for Admin
             if st.button("Log Prediction to Logs"):
-                log_entry = {"Type": "Slider Input", "Result": predicted_species, "Data": f"{sepal_length}, {sepal_width}, {petal_length}, {petal_width}"}
+                log_entry = {"Type": "Slider Input", "Result": predicted_species, "Inputs/Data": f"{sepal_length}, {sepal_width}, {petal_length}, {petal_width}"}
                 st.session_state["prediction_history"].append(log_entry)
                 st.toast("Saved to system logs!")
 
@@ -174,7 +177,36 @@ else:
                     st.session_state["prediction_history"].append(log_entry)
                     st.toast("Saved photo event to logs!")
         
-    # --- PLACEHOLDER FOR FINAL STEP ---
+    # --- PAGE 3: COMPLETED ADMIN DASHBOARD PANEL ---
     elif page == "🛠️ Admin Dashboard":
-        st.title("🛠️ Private Admin System panel")
-        st.warning("Step 4 will insert your restricted administrative tracking frames right here!")
+        st.title("🛠️ Private Admin System Panel")
+        st.write("Welcome back, Administrator. Monitoring platform metrics and structural logs.")
+        
+        # Display high level stats boxes
+        col1, col2 = st.columns(2)
+        with col1:
+            st.metric(label="Total Session Logs", value=len(st.session_state["prediction_history"]))
+        with col2:
+            st.metric(label="Model Status", value="Active / Functional")
+            
+        # Session logs historical data framework
+        st.markdown('<div class="admin-card">', unsafe_allow_html=True)
+        st.subheader("📋 Session Event Logging Tracking")
+        if len(st.session_state["prediction_history"]) > 0:
+            history_df = pd.DataFrame(st.session_state["prediction_history"])
+            st.dataframe(history_df, use_container_width=True)
+        else:
+            st.info("Log index empty.")
+            
+        if st.button("Clear History Logs"):
+            st.session_state["prediction_history"] = []
+            st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
+        
+        # Raw Data Sample Reference
+        st.markdown('<div class="admin-card">', unsafe_allow_html=True)
+        st.subheader("🗂️ Training Reference Dataset (Sample)")
+        raw_df = pd.DataFrame(X, columns=feature_names)
+        raw_df['Target Species'] = [iris.target_names[i].upper() for i in y]
+        st.dataframe(raw_df.head(10), use_container_width=True)
+        st.markdown('</div>', unsafe_allow_html=True)
