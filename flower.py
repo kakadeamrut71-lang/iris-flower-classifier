@@ -3,11 +3,6 @@ import pandas as pd
 from sklearn.datasets import load_iris
 from sklearn.linear_model import LogisticRegression
 
-# SET CLEAN PWA INSTALLATION APP TITLE (Split across lines to prevent errors)
-st.set_page_title(
-    page_title="Iris Predictor", page_icon="🌸", layout="centered"
-)
-
 # 1. PREMIUM STYLING (HTML/CSS)
 st.markdown("""
     <style>
