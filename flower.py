@@ -2,6 +2,8 @@ import streamlit as st
 import pandas as pd
 from sklearn.datasets import load_iris
 from sklearn.linear_model import LogisticRegression
+
+# SET CLEAN PWA INSTALLATION APP TITLE (Split across lines to prevent errors)
 st.set_page_title(
     page_title="Iris Predictor", page_icon="🌸", layout="centered"
 )
@@ -68,7 +70,7 @@ if "user_role" not in st.session_state:
 if "prediction_history" not in st.session_state:
     st.session_state["prediction_history"] = [{"Type": "System Test", "Result": "SETOSA", "Inputs/Data": "5.1, 3.5, 1.4, 0.2"}]
 
-# Core Local User Registry Map
+# Custom Account Database Storage Setup
 if "user_database" not in st.session_state:
     st.session_state["user_database"] = {
         "admin": {"password": "admin123", "role": "admin"},
@@ -162,7 +164,7 @@ else:
         </div>
         """, unsafe_allow_html=True)
         
-    # --- PAGE 2: CORE AI PREDICTOR (FORM BUTTON FIX) ---
+    # --- PAGE 2: CORE AI PREDICTOR ---
     elif page == "🌸 AI Predictor":
         st.title("🌸 AI Predictor Dashboard")
         tab1, tab2 = st.tabs(["🎚️ Measurement Sliders", "📸 Live Camera Scanner"])
