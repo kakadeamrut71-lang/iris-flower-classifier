@@ -53,16 +53,21 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 2. INITIALIZE SESSION STATE & TRAIN MODEL DATA
+# 2. INITIALIZE REGISTRY & SESSION STATES
 if "logged_in" not in st.session_state:
     st.session_state["logged_in"] = False
 if "user_role" not in st.session_state:
     st.session_state["user_role"] = None
 if "prediction_history" not in st.session_state:
-    # Pre-populate history with a sample log so it is not empty
-    st.session_state["prediction_history"] = [
-        {"Type": "System Test", "Result": "SETOSA", "Inputs/Data": "5.1, 3.5, 1.4, 0.2"}
-    ]
+    st.session_state["prediction_history"] = [{"Type": "System Test", "Result": "SETOSA", "Inputs/Data": "5.1, 3.5, 1.4, 0.2"}]
+
+# NEW FEATURE: Custom Account Database Storage
+if "user_database" not in st.session_state:
+    # Pre-creating your admin account and one sample user account
+    st.session_state["user_database"] = {
+        "admin": {"password": "admin123", "role": "admin"},
+        "user": {"password": "user123", "role": "user"}
+    }
 
 # Load Iris Dataset and Train standard model
 iris = load_iris()
@@ -72,29 +77,55 @@ feature_names = ['sepal length', 'sepal width', 'petal length', 'petal width']
 model = LogisticRegression(max_iter=200)
 model.fit(X, y)
 
-# 3. LOGIN INTERFACE
+# 3. LOGIN & SIGN-UP GATEWAY INTERFACE
 if not st.session_state["logged_in"]:
-    st.title("🔐 Secure AI Portal Login")
-    st.write("Please enter your credentials to unlock the Iris Predictor application.")
+    st.title("🔐 Secure AI Portal")
+    
+    # Switch between Login mode and Sign Up mode
+    auth_mode = st.radio("Choose Action:", ["Sign In to Account", "Create New Account (Sign Up)"], horizontal=True)
     
     with st.container():
-        username = st.text_input("Username")
-        password = st.text_input("Password", type="password")
-        login_button = st.button("Log In")
-        
-        if login_button:
-            if username == "admin" and password == "admin123":
-                st.session_state["logged_in"] = True
-                st.session_state["user_role"] = "admin"
-                st.rerun()
-            elif username == "user" and password == "user123":
-                st.session_state["logged_in"] = True
-                st.session_state["user_role"] = "user"
-                st.rerun()
-            else:
-                st.error("Invalid Username or Password. Please try again.")
+        if auth_mode == "Sign In to Account":
+            st.subheader("🔑 Sign In")
+            username = st.text_input("Username")
+            password = st.text_input("Password", type="password")
+            login_button = st.button("Log In")
+            
+            if login_button:
+                # Check if username exists in our dynamic database dictionary
+                if username in st.session_state["user_database"]:
+                    stored_password = st.session_state["user_database"][username]["password"]
+                    stored_role = st.session_state["user_database"][username]["role"]
+                    
+                    if password == stored_password:
+                        st.session_state["logged_in"] = True
+                        st.session_state["user_role"] = stored_role
+                        st.rerun()
+                    else:
+                        st.error("Incorrect password. Please try again.")
+                else:
+                    st.error("Username not found. Click 'Create New Account' above to sign up!")
+                    
+        else:
+            st.subheader("📝 Register New Account")
+            new_username = st.text_input("Choose a Username").strip().lower()
+            new_password = st.text_input("Choose a Password", type="password")
+            confirm_password = st.text_input("Confirm Password", type="password")
+            register_button = st.button("Register Account")
+            
+            if register_button:
+                if not new_username or not new_password:
+                    st.warning("Username and Password fields cannot be empty.")
+                elif new_username in st.session_state["user_state" if "user_state" in st.session_state else "user_database"]:
+                    st.error("That username is already taken! Try another one.")
+                elif new_password != confirm_password:
+                    st.error("Passwords do not match. Re-type carefully.")
+                else:
+                    # Save new credentials into our session memory database as a regular user
+                    st.session_state["user_database"][new_username] = {"password": new_password, "role": "user"}
+                    st.success("🎉 Registration Complete! Select 'Sign In to Account' above to log in.")
 
-# 4. SECURE INNER FRAMEWORK
+# 4. SECURE INNER FRAMEWORK (After successful authentication)
 else:
     st.sidebar.title("Navigation Menu")
     if st.session_state["user_role"] == "admin":
@@ -131,8 +162,6 @@ else:
     # --- PAGE 2: CORE AI PREDICTOR (SLIDERS & CAMERA) ---
     elif page == "🌸 AI Predictor":
         st.title("🌸 AI Predictor Dashboard")
-        
-        # Split options using tabs inside the dashboard
         tab1, tab2 = st.tabs(["🎚️ Measurement Sliders", "📸 Live Camera Scanner"])
         
         with tab1:
@@ -142,14 +171,12 @@ else:
             petal_length = st.slider("Petal Length (cm)", 1.0, 6.9, 4.3)
             petal_width = st.slider("Petal Width (cm)", 0.1, 2.5, 1.3)
             
-            # Form processing
             input_data = pd.DataFrame([[sepal_length, sepal_width, petal_length, petal_width]], columns=feature_names)
             
             st.markdown('<div class="predictor-card">', unsafe_allow_html=True)
             st.subheader("📊 Selected Dimensions Frame")
             st.write(input_data)
             
-            # Predict
             prediction = model.predict(input_data)
             predicted_species = iris.target_names[prediction[0]].upper()
             
@@ -157,7 +184,6 @@ else:
             st.success(f"The AI thinks this flower is a **{predicted_species}**!")
             st.markdown('</div>', unsafe_allow_html=True)
             
-            # Save logs to history tracking state for Admin
             if st.button("Log Prediction to Logs"):
                 log_entry = {"Type": "Slider Input", "Result": predicted_species, "Inputs/Data": f"{sepal_length}, {sepal_width}, {petal_length}, {petal_width}"}
                 st.session_state["prediction_history"].append(log_entry)
@@ -166,29 +192,28 @@ else:
         with tab2:
             st.write("Capture a raw botanical specimen image via camera:")
             picture = st.camera_input("Take a photo of an Iris flower")
-            
             if picture:
                 st.image(picture, caption="Uploaded Image Stream")
                 st.info("✨ Image matrix captured successfully! CNN deep learning classification coming soon.")
-                
-                # Save logs to history tracking state for Admin
-                if st.button("Log Snapshot to Logs"):
-                    log_entry = {"Type": "Camera Snapshot", "Result": "PENDING_CNN_IMAGE", "Data": "Raw Image Matrix"}
-                    st.session_state["prediction_history"].append(log_entry)
-                    st.toast("Saved photo event to logs!")
-        
-    # --- PAGE 3: COMPLETED ADMIN DASHBOARD PANEL ---
+
+    # --- PAGE 3: ADMIN DASHBOARD PANEL (SHOWS REGISTERED USERS TOO!) ---
     elif page == "🛠️ Admin Dashboard":
         st.title("🛠️ Private Admin System Panel")
-        st.write("Welcome back, Administrator. Monitoring platform metrics and structural logs.")
         
-        # Display high level stats boxes
         col1, col2 = st.columns(2)
         with col1:
             st.metric(label="Total Session Logs", value=len(st.session_state["prediction_history"]))
         with col2:
-            st.metric(label="Model Status", value="Active / Functional")
+            st.metric(label="Registered Users Online", value=len(st.session_state["user_database"]))
             
+        # NEW ADMIN FEATURE: View Created Accounts
+        st.markdown('<div class="admin-card">', unsafe_allow_html=True)
+        st.subheader("👥 Registered Accounts Registry")
+        users_df = pd.DataFrame.from_dict(st.session_state["user_database"], orient="index").reset_index()
+        users_df.columns = ["Username", "Password (Plain)", "System Role"]
+        st.dataframe(users_df, use_container_width=True)
+        st.markdown('</div>', unsafe_allow_html=True)
+
         # Session logs historical data framework
         st.markdown('<div class="admin-card">', unsafe_allow_html=True)
         st.subheader("📋 Session Event Logging Tracking")
@@ -197,16 +222,7 @@ else:
             st.dataframe(history_df, use_container_width=True)
         else:
             st.info("Log index empty.")
-            
         if st.button("Clear History Logs"):
             st.session_state["prediction_history"] = []
             st.rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
-        
-        # Raw Data Sample Reference
-        st.markdown('<div class="admin-card">', unsafe_allow_html=True)
-        st.subheader("🗂️ Training Reference Dataset (Sample)")
-        raw_df = pd.DataFrame(X, columns=feature_names)
-        raw_df['Target Species'] = [iris.target_names[i].upper() for i in y]
-        st.dataframe(raw_df.head(10), use_container_width=True)
         st.markdown('</div>', unsafe_allow_html=True)
